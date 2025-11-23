@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MCdigger - Ultimate Tool</title>
+    <title>MCdigger - Ultimate Tool Suite</title>
     
+    <!-- Markdown Fallback (marked.js) -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
@@ -117,10 +118,10 @@
         .view.active { display: block; }
         @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- DASHBOARD --- */
-        .hero { text-align: center; margin-bottom: 3rem; }
-        .hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; }
-        .hero p { color: var(--text-dim); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; }
+        /* --- DASHBOARD (Home View) --- */
+        #view-home .hero { text-align: center; margin-bottom: 3rem; }
+        #view-home .hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; }
+        #view-home .hero p { color: var(--text-dim); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; }
 
         /* Main AI Box */
         .ai-box {
@@ -461,6 +462,7 @@
             </div>
         </div>
 
+        <!-- Dies ist die zentrale Tool-Seite, die den Inhalt dynamisch lädt -->
         <div id="view-tool" class="view">
             <div class="tool-container">
                 <div class="tool-sidebar" id="toolSidebar"></div>
@@ -473,95 +475,59 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Dies ist die simulierte Error-Seite -->
+        <div id="view-error" class="view">
+             <div style="text-align:center; padding: 40px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; max-width: 600px; margin: 100px auto;">
+                <h1 style="color: var(--accent); font-size: 2.5rem; margin-bottom: 10px;">SYSTEMFEHLER</h1>
+                <p style="color: var(--text-dim); font-size: 1.1rem; margin-bottom: 20px;">Ein unerwarteter Fehler ist aufgetreten.</p>
+                <div id="errorDetails" style="background: var(--bg-code); padding: 15px; border-radius: 6px; text-align: left; font-family: var(--font-mono); font-size: 0.9rem; color: #fca5a5;">
+                    Fehlercode: Unbekannt. Bitte kehre zur Startseite zurück und versuche es erneut.
+                </div>
+                <button class="btn-full" onclick="app.home()" style="margin-top: 30px;">Zurück zur Startseite</button>
+            </div>
+        </div>
     </main>
 
     <script>
-        // CONFIG
+        // =================================================================================
+        // Globale Konfiguration, Sprachen und Versionsdaten
+        // =================================================================================
+
         const CONFIG = {
-            // DEIN API Key, bereitgestellt von peroonic
-            apiKey: 'AIzaSyCJ1IdHYxE9_snBTh9yuMFKhvXinlLbC7M'
+            // Dein API Key für den Zugriff auf die Gemini API
+            apiKey: 'AIzaSyCJ1IdHYxE9_snBTh9yuMFKhvXinlLbC7M',
+            model: 'gemini-2.5-flash',
         };
 
-        window.onerror = function(msg, url, line, col, error) {
-            const el = document.getElementById('js-error-display');
-            el.style.display = 'block';
-            el.innerText = `System Error: ${msg}`;
-            setTimeout(() => el.style.display = 'none', 5000);
-            return false;
-        };
-
-        // KORRIGIERTE ANWEISUNG: Der Code MUSS funktional und präzise sein.
-        const getLangInstruction = (lang) => {
-            // VERBESSERT: Konkreter Fokus auf Hardcap, Attribute und Components.
-            if (lang === 'de') return "Antworte auf Deutsch. Erkläre es kurz, präzise und professionell. Der ausgegebene Code/Befehl MUSS 100%ig FUNKTIONAL und AKKURAT sein. Nutze die offizielle Minecraft Dokumentation (z.B. Minecraft Wiki) zur Überprüfung der Syntax für Attribute Modifiers und Komponenten. Wenn ein Wert (z.B. ein Enchantment Level wie 2.000.000) die In-Game-Grenze überschreitet, MUSS der Befehl automatisch den HÖCHSTEN FUNKTIONALEN Wert (z.B. 255 oder das Hardcap) verwenden und dies kurz erwähnen. Achte strikt auf die korrekte NBT/Component-Syntax der angegebenen Version. Gib nur den finalen, lauffähigen Befehl aus, oder sage, wenn die Anforderung technisch nicht umsetzbar ist.";
-            return "Answer in English. Explain concisely and professionally. The output code/command MUST be 100% FUNCTIONAL and ACCURATE. Use the official Minecraft documentation (e.g., Minecraft Wiki) to verify syntax for Attribute Modifiers and Components. If a value (e.g., an enchantment level like 2,000,000) exceeds the in-game limit, the command MUST automatically use the HIGHEST FUNCTIONAL value (e.g., 255 or the hardcap) and briefly mention this. Pay strict attention to the correct NBT/Component syntax for the specified version. Output only the final, runnable command, or state if the requirement is technically unfeasible.";
-        };
-
-        // EXTREM ERWEITERTE VERSIONSLISTE
         const generateVersionOptions = () => {
             const versions = [
-                // 1.21 (Tricky Trials)
-                '1.21.8', '1.21.7', '1.21.6', '1.21.5', '1.21.4', '1.21.3', '1.21.2', '1.21.1', '1.21',
+                // 1.21 (Tricky Trials) - NEUE VERSIONEN HINZUGEFÜGT
+                '1.21.10', '1.21.9', '1.21.8', '1.21.7', '1.21.6', '1.21.5', '1.21.4', '1.21.3', '1.21.2', '1.21.1', '1.21',
                 // 1.20 (Trails & Tales)
                 '1.20.6', '1.20.5', '1.20.4', '1.20.3', '1.20.2', '1.20.1', '1.20',
-                // 1.19 (The Wild Update)
-                '1.19.4', '1.19.3', '1.19.2', '1.19.1', '1.19',
-                // 1.18 (Caves & Cliffs: Part II)
-                '1.18.2', '1.18.1', '1.18',
-                // 1.17 (Caves & Cliffs: Part I)
-                '1.17.1', '1.17',
-                // 1.16 (Nether Update)
-                '1.16.5', '1.16.4', '1.16.3', '1.16.2', '1.16.1', '1.16',
-                // 1.15 (Buzzy Bees)
-                '1.15.2', '1.15.1', '1.15',
-                // 1.14 (Village & Pillage)
-                '1.14.4', '1.14.3', '1.14.2', '1.14.1', '1.14',
-                // 1.13 (Update Aquatic)
-                '1.13.2', '1.13.1', '1.13',
-                // 1.12 (World of Color)
-                '1.12.2', '1.12.1', '1.12',
-                // 1.11 (Exploration Update)
-                '1.11.2', '1.11.1', '1.11',
-                // 1.10 (Frostburn Update)
-                '1.10.2', '1.10.1', '1.10',
-                // 1.9 (Combat Update)
-                '1.9.4', '1.9.3', '1.9.2', '1.9.1', '1.9',
-                // 1.8 (Bountiful Update)
-                '1.8.9', '1.8.8', '1.8.7', '1.8.6', '1.8.5', '1.8.4', '1.8.3', '1.8.2', '1.8.1', '1.8'
+                // Ältere Versionen
+                '1.19.4', '1.18.2', '1.17.1', '1.16.5', '1.15.2', '1.14.4', '1.13.2', '1.12.2', '1.8.9'
             ];
             return versions;
         };
         
         const FULL_VERSIONS = generateVersionOptions();
-        const COMPONENT_VERSIONS = ['1.21.x (Components)', '1.20.5+ (Components)'];
-        const NBT_VERSIONS = ['1.20.4- (NBT)'];
-
+        
+        // KI-Anweisung, die von allen Tools genutzt wird, um Genauigkeit zu garantieren
+        const getLangInstruction = (lang) => {
+            if (lang === 'de') return "Antworte auf Deutsch. Erkläre es kurz, präzise und professionell. Der ausgegebene Code/Befehl MUSS 100%ig FUNKTIONAL und AKKURAT sein. Nutze die offizielle Minecraft Dokumentation (z.B. Minecraft Wiki und Misode/VanillaTweaks-Standards) zur Überprüfung der Syntax. Wenn ein Wert die In-Game-Grenze überschreitet, MUSS der Befehl automatisch den HÖCHSTEN FUNKTIONALEN Wert (z.B. 255 oder das Hardcap) verwenden und dies kurz erwähnen. Achte strikt auf die korrekte NBT/Component-Syntax der angegebenen Version. Gib nur den finalen, lauffähigen Code/Befehl aus. Du bist ein Experte und garantierst die Korrektheit des Codes.";
+            return "Answer in English. Explain concisely and professionally. The output code/command MUST be 100% FUNCTIONAL and ACCURATE. Use the official Minecraft documentation (e.g., Minecraft Wiki and Misode/VanillaTweaks standards) to verify syntax. If a value exceeds the in-game limit, the command MUST automatically use the HIGHEST FUNCTIONAL value (e.g., 255 or the hardcap) and briefly mention this. Pay strict attention to the correct NBT/Component syntax for the specified version. Output only the final, runnable code/command. You are an expert and guarantee the code's correctness.";
+        };
 
         const TRANSLATIONS = {
             de: {
-                back: "Zurück",
-                ph_ai: "Frag die MCdigger AI (z.B. Crafting Rezept)...",
-                gen_btn: "GENERIEREN",
-                calc_btn: "BERECHNEN",
-                loading: "Hybrid Engine arbeitet...",
-                step1: "Verbindung zu MCdigger AI herstellen", 
-                step2: "Command generieren (Experten-Modus)",
-                step3: "Syntax auf Version {ver} prüfen (100% Garantie)",
-                // Neue/Aktualisierte Keys
+                back: "Zurück", ph_ai: "Frag die MCdigger AI (z.B. Crafting Rezept)...", gen_btn: "GENERIEREN", calc_btn: "BERECHNEN", loading: "Hybrid Engine arbeitet...",
+                step1: "Verbindung zu MCdigger AI herstellen", step2: "Command generieren (Experten-Modus)", step3: "Syntax auf Version {ver} prüfen (100% Garantie)",
+                // Tool Beschreibungen
                 t_spawner: "Erstellt Mob Spawner mit Items, Effekten und spezifischen Mobs.",
-                s_mob: "Mob Typ (z.B. zombie)",
-                s_delay: "Min/Max Delay (Ticks)",
-                s_count: "Anzahl Mobs pro Spawn",
-                fmt_bold: "Fett",
-                fmt_italic: "Kursiv",
-                fmt_under: "Unterstrichen",
-                fmt_strike: "Durchgestrichen",
-                fmt_obf: "Verschleiert",
-                book_hover: "Hover Text",
-                invul: "Unverwundbar", 
-                // Tools
-                t_nether: "Berechnet Koordinaten zwischen Overworld/Nether sofort.",
-                t_datapack: "Erstellt Advancements, Loot Tables & Functions in einem kompletten Data Pack.", // NEU
+                t_nether: "Berechnet Koordinaten zwischen Overworld/Nether sofort.", 
+                t_datapack: "Erstellt Advancements, Loot Tables & Functions in einem kompletten Data Pack.", 
                 t_potion: "Erstellt OP-Tränke (beachtet die neue 1.20.5+ Syntax).",
                 t_fire: "Für komplexe Raketen mit Farben/Fades.",
                 t_book: "Erstellt JSON-Bücher/Schilder mit Klick-Events.",
@@ -583,31 +549,17 @@
                 t_grad: "Gradient Text (Birdflop Style).",
                 t_head: "Head Generator: Sofort /give für Köpfe.",
                 t_stack: "Stack Rechner: Items in Shulker/Stacks umrechnen.",
+                // Spezifische Inputs
+                s_mob: "Mob Typ (z.B. zombie)", s_delay: "Min/Max Delay (Ticks)", s_count: "Anzahl Mobs pro Spawn",
+                fmt_bold: "Fett", fmt_italic: "Kursiv", fmt_under: "Unterstrichen", fmt_strike: "Durchgestrichen", fmt_obf: "Verschleiert", book_hover: "Hover Text", invul: "Unverwundbar", 
             },
             en: {
-                back: "Back",
-                ph_ai: "Ask MCdigger AI (Minecraft only)...",
-                gen_btn: "GENERATE",
-                calc_btn: "CALCULATE",
-                loading: "Hybrid Engine working...",
-                step1: "Establishing connection to MCdigger AI", 
-                step2: "Generating command (Expert Mode)",
-                step3: "Checking syntax for version {ver} (100% guarantee)",
-                // New/Updated Keys
+                back: "Back", ph_ai: "Ask MCdigger AI (Minecraft only)...", gen_btn: "GENERATE", calc_btn: "CALCULATE", loading: "Hybrid Engine working...",
+                step1: "Establishing connection to MCdigger AI", step2: "Generating command (Expert Mode)", step3: "Checking syntax for version {ver} (100% guarantee)",
+                // Tool Beschreibungen
                 t_spawner: "Creates mob spawners with items, effects and specific mobs.",
-                s_mob: "Mob Type (e.g. zombie)",
-                s_delay: "Min/Max Delay (Ticks)",
-                s_count: "Mobs per Spawn",
-                fmt_bold: "Bold",
-                fmt_italic: "Italic",
-                fmt_under: "Underlined",
-                fmt_strike: "Strikethrough",
-                fmt_obf: "Obfuscated",
-                book_hover: "Hover Text",
-                invul: "Invulnerable", 
-                // Tools
-                t_nether: "Calculates coords Overworld/Nether instantly.",
-                t_datapack: "Creates advancements, loot tables & functions in a complete data pack.", // NEU
+                t_nether: "Calculates coords Overworld/Nether instantly.", 
+                t_datapack: "Creates advancements, loot tables & functions in a complete data pack.", 
                 t_potion: "Creates OP potions (supports 1.20.5+ syntax).",
                 t_fire: "For complex rockets with colors/fades.",
                 t_book: "Creates JSON books/signs with click events.",
@@ -629,8 +581,15 @@
                 t_grad: "Gradient Text (Birdflop Style).",
                 t_head: "Head Generator: Instant /give for heads.",
                 t_stack: "Stack Calculator: Convert items to Shulkers/Stacks.",
+                // Spezifische Inputs
+                s_mob: "Mob Type (e.g. zombie)", s_delay: "Min/Max Delay (Ticks)", s_count: "Mobs per Spawn",
+                fmt_bold: "Bold", fmt_italic: "Italic", fmt_under: "Underlined", fmt_strike: "Strikethrough", fmt_obf: "Obfuscated", book_hover: "Hover Text", invul: "Invulnerable", 
             }
         };
+
+        // =================================================================================
+        // Tool-Definitionen (Simulation separater Tool-Klassen)
+        // =================================================================================
 
         const TOOLS = [
             // --- LOKALE TOOLS ---
@@ -642,7 +601,17 @@
                     {id: 'x', label: 'X', type: 'text', ph: '1000'}, 
                     {id: 'z', label: 'Z', type: 'text', ph: '1000'}, 
                     {id: 'mode', label: 'Mode', type: 'select', opts: ['Overworld->Nether', 'Nether->Overworld']}
-                ]
+                ],
+                runLocal: (d) => {
+                    const x = parseFloat(d.x) || 0;
+                    const z = parseFloat(d.z) || 0;
+                    if (isNaN(x) || isNaN(z)) return "Fehler: X- und Z-Werte müssen Zahlen sein.";
+                    if (d.mode.includes('Overworld')) {
+                        return `Nether-Koordinaten:\nX=${Math.round(x/8)}\nZ=${Math.round(z/8)}`;
+                    } else {
+                        return `Overworld-Koordinaten:\nX=${x*8}\nZ=${z*8}`;
+                    }
+                }
             },
             {
                 id: 'stack', title: 'Stack Rechner', descKey: 't_stack', type: 'local', version: 'All',
@@ -651,7 +620,20 @@
                     {id: 'ver', label: 'MC Version', type: 'select', opts: FULL_VERSIONS},
                     {id: 'amt', label: 'Anzahl Items', type: 'text', ph: '2000'}, 
                     {id: 'size', label: 'Stack Größe', type: 'text', ph: '64'}
-                ]
+                ],
+                runLocal: (d) => {
+                    const total = parseInt(d.amt) || 0;
+                    const size = parseInt(d.size) || 64;
+                    if (isNaN(total) || isNaN(size) || size <= 0 || total < 0) return "Fehler: Ungültige Item- oder Stack-Anzahl.";
+
+                    const itemsPerShulker = size * 27;
+                    const sb = Math.floor(total / itemsPerShulker);
+                    const remItems = total % itemsPerShulker;
+                    const stacks = Math.floor(remItems / size);
+                    const items = remItems % size;
+                    
+                    return `Items: ${total}\n----------------\nShulker Boxen: ${sb}\nStacks: ${stacks}\nEinzelne Items: ${items}`;
+                }
             },
             {
                 id: 'head', title: 'Head Generator', descKey: 't_head', type: 'local', version: 'All',
@@ -660,60 +642,52 @@
                     {id: 'ver', label: 'MC Version', type: 'select', opts: FULL_VERSIONS}, 
                     {id: 'name', label: 'Name', type: 'text', ph: 'MHF_Herobrine'}, 
                     {id: 'target', label: 'Target', type: 'text', ph: '@p'}
-                ]
+                ],
+                runLocal: (d) => {
+                    const ver = d.ver || '1.21.10';
+                    const isComp = ver.startsWith('1.21') || ver.startsWith('1.20.5') || ver.startsWith('1.20.6'); 
+
+                    if (!d.name.trim() || !d.target.trim()) return "Fehler: Name und Target (z.B. @p) sind erforderlich.";
+                    const skullOwnerTag = isComp ? `[minecraft:profile={name:"${d.name}"}]` : `{SkullOwner:"${d.name}"}`;
+                    return `/give ${d.target} minecraft:player_head${skullOwnerTag} 1`;
+                }
             },
-            
-            // --- SPAWNER GENERATOR ---
+
+            // --- KI TOOLS ---
             {
                 id: 'spawner', title: 'Spawner Generator', descKey: 't_spawner', type: 'ai', version: 'All',
                 icon: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>', 
                 inputs: [
                     {id: 'ver', label: 'MC Version', type: 'select', opts: FULL_VERSIONS},
-                    {id: 'mob', label: 'Mob Typ (z.B. zombie)', descKey: 's_mob', type: 'text', ph: 'skeleton'},
+                    {id: 'mob', label: 'Mob Typ', descKey: 's_mob', type: 'text', ph: 'skeleton'},
                     {id: 'delay', label: 'Min/Max Delay (Ticks)', descKey: 's_delay', type: 'text', ph: '10 / 600'},
                     {id: 'count', label: 'Anzahl Mobs pro Spawn', descKey: 's_count', type: 'text', ph: '4'},
                     {id: 'invul', label: 'Unverwundbar', type: 'checks', opts: ['Invulnerable']},
                     {id: 'equipment', label: 'Mob Ausrüstung/Effekte/Passagiere', type: 'textarea', ph: 'Z.B. Zombie mit Diamantschwert, Stärke 5, auf Huhn reitend. (Nutze natürliche Sprache)'}
                 ],
-                // Prompt aktualisiert, um Invulnerable einzubinden
                 prompt: (d, l) => {
                     const invul = d.invul.includes('Invulnerable') ? 'Make the spawned mob Invulnerable (Invulnerable:1b).' : 'The mob should NOT be Invulnerable.';
                     return `Generate a /setblock command for a Mob Spawner in Minecraft Version ${d.ver} at ~ ~1 ~ (replace mode). Set the primary spawned entity to '${d.mob}'. Use the spawn parameters: Min/Max Delay: ${d.delay} ticks, Spawn Count: ${d.count}. The command MUST incorporate the complex entity data specified by the user: "${d.equipment}". ${invul} This includes nested entities (Passengers), custom NBT/Components for items (Name, Lore, Enchantments, Drop Chances), and entity flags (Silent, Active Effects). The command MUST be fully functional and complete, prioritizing complexity and accuracy based on the user's detailed request. Focus heavily on implementing the NBT/Components for the equipment accurately for version ${d.ver}.`;
                 }
             },
-
-            // --- NEUES DATA PACK CREATOR TOOL ---
             {
                 id: 'datapack', title: 'Data Pack Creator', descKey: 't_datapack', type: 'ai', version: '1.20+',
-                icon: '<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>', // Stern-Icon vom alten Adv. Creator
+                icon: '<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>',
                 inputs: [
                     {id: 'ver', label: 'MC Version', type: 'select', opts: FULL_VERSIONS},
                     {id: 'desc', label: 'Beschreibung (Advancements, Loot Tables, Functions...)', type: 'textarea', ph: 'Erstelle 3 Advancements: Tötung eines Zombies, Erreichen des Nethers. Eine Loot Table für das Schaf, die immer Wolle und 1 Diamanten dropt. Eine Function für /op-all.'}
                 ],
-                // PROMPT AKTUALISIERT: Generiert Data Pack Struktur + Tutorial + Struktur-Check
                 prompt: (d, l) => {
-                    // Mapping der Pack-Format-Version zur Minecraft-Version (basierend auf MC Wiki)
                     let packFormat;
-                    const versionMap = {
-                        '1.21': 48, '1.20.5': 48, '1.20': 26, '1.19': 10, '1.18': 9, '1.17': 7, '1.16': 6, '1.15': 5, '1.14': 4, '1.13': 4, '1.12': 3, '1.11': 3, '1.10': 3, '1.9': 3, '1.8': 1
-                    };
+                    const versionMap = { '1.21': 48, '1.20.5': 48, '1.20': 26, '1.19': 10, '1.18': 9, '1.17': 7, '1.16': 6, '1.15': 5, '1.14': 4, '1.13': 4, '1.12': 3, '1.11': 3, '1.10': 3, '1.9': 3, '1.8': 1 };
                     for (const [v, format] of Object.entries(versionMap)) {
-                        if (d.ver.startsWith(v)) {
-                            packFormat = format;
-                            break;
-                        }
+                        if (d.ver.startsWith(v)) { packFormat = format; break; }
                     }
-                    if (!packFormat) packFormat = 48; // Standard für neueste Version
+                    if (!packFormat) packFormat = 48;
 
-                    return `Erzeuge eine VOLLSTÄNDIGE Minecraft Data Pack Struktur (Version ${d.ver}). Der Name des Data Packs soll "mcdigger_pack" sein. Verwende den Namespace "mcdigger". Die "pack_format" Version in pack.mcmeta muss ${packFormat} sein. Generiere die vollständigen JSON/MCFUNCTION-Dateien basierend auf dieser Beschreibung: "${d.desc}". **WICHTIG:** 1. Loot Tables müssen die korrekte Struktur mit "pools", "entries", "functions" und "conditions" verwenden (orientiert am Misode Loot Table Generator). 
-2. Advancements müssen "display", "criteria" und "rewards" enthalten (orientiert am Misode Advancement Generator).
-3. Für simple Quality-of-Life-Verbesserungen (wie benutzerdefinierte Rezepte oder Funktionen) generiere den notwendigen JSON/MCFUNCTION Code (orientiert an Vanilla Tweaks). 
-4. Halte die Data Pack Ordnerstruktur strikt ein, d.h., alle Dateien müssen im Ordner **data/mcdigger/** abgelegt werden (außer pack.mcmeta).
-Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der vollständige Dateipfad (z.B. mcdigger_pack/pack.mcmeta oder mcdigger_pack/data/mcdigger/advancements/root.json) direkt über dem Codeblock steht. Anschließend gib eine klare, strukturierte **SCHRITT-FÜR-SCHRITT ANLEITUNG AUF DEUTSCH** wie man das erzeugte Data Pack in eine Minecraft Java Welt (Singleplayer oder Server) einfügt und aktiviert.`;
+                    return `Erzeuge eine VOLLSTÄNDIGE Minecraft Data Pack Struktur (Version ${d.ver}). Der Name des Data Packs soll "mcdigger_pack" sein. Verwende den Namespace "mcdigger". Die "pack_format" Version in pack.mcmeta muss ${packFormat} sein. Generiere die vollständigen JSON/MCFUNCTION-Dateien basierend auf dieser Beschreibung: "${d.desc}". **WICHTIG:** Alle JSON-Dateien müssen den neuesten Misode-Standards entsprechen und alle Quality-of-Life-Funktionen (Vanilla Tweaks-Stil) als *.mcfunction* Dateien korrekt implementiert werden. Halte die Data Pack Ordnerstruktur strikt ein. Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der vollständige Dateipfad (z.B. mcdigger_pack/pack.mcmeta) direkt über dem Codeblock steht. Anschließend gib eine klare, strukturierte **SCHRITT-FÜR-SCHRITT ANLEITUNG AUF DEUTSCH** wie man das erzeugte Data Pack in eine Minecraft Java Welt einfügt und aktiviert.`;
                 }
             },
-            
-            // --- DIE RESTLICHEN AI TOOLS ---
             {
                 id: 'potion', title: 'Potion Brewer', descKey: 't_potion', type: 'ai', version: '1.20.5+',
                 icon: '<path d="M16.5 11l-4.5-8-4.5 8v7h9v-7zM12 4.5l3 5.33V16h-6V9.83L12 4.5z"/>',
@@ -745,7 +719,6 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
                     {id: 'hover', label: 'Hover Text', descKey: 'book_hover', type: 'text', ph: 'Item/Text-Anzeige beim Hover'},
                     {id: 'click', label: 'Klick Befehl', type: 'text', ph: '/heal'}
                 ],
-                // Prompt aktualisiert, um Hover und neue Typen zu unterstützen
                 prompt: (d, l) => `Generate /give command for a ${d.type} (Version ${d.ver}). Main Text: "${d.txt}". ClickEvent: Run Command '${d.click}'. Hover Text (if applicable): '${d.hover}'. Ensure correct JSON escaping and syntax for ${d.ver}. For 'Written Book', ensure it has title/author/pages tags/components.`
             },
             {
@@ -758,15 +731,10 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
                     {id: 'style', label: 'Formatierung', type: 'checks', opts: [TRANSLATIONS.de.fmt_bold, TRANSLATIONS.de.fmt_italic, TRANSLATIONS.de.fmt_under, TRANSLATIONS.de.fmt_strike, TRANSLATIONS.de.fmt_obf]}, 
                     {id: 'tar', label: 'Empfänger', type: 'text', ph: '@a'}
                 ],
-                // Prompt aktualisiert, um Formatierung zu unterstützen
                 prompt: (d, l) => {
                     const styles = d.style.split(', ').map(s => {
-                        if (s === TRANSLATIONS.de.fmt_bold) return `"bold":true`;
-                        if (s === TRANSLATIONS.de.fmt_italic) return `"italic":true`;
-                        if (s === TRANSLATIONS.de.fmt_under) return `"underlined":true`;
-                        if (s === TRANSLATIONS.de.fmt_strike) return `"strikethrough":true`;
-                        if (s === TRANSLATIONS.de.fmt_obf) return `"obfuscated":true`;
-                        return '';
+                        const styleMap = { [TRANSLATIONS.de.fmt_bold]: `"bold":true`, [TRANSLATIONS.de.fmt_italic]: `"italic":true`, [TRANSLATIONS.de.fmt_under]: `"underlined":true`, [TRANSLATIONS.de.fmt_strike]: `"strikethrough":true`, [TRANSLATIONS.de.fmt_obf]: `"obfuscated":true` };
+                        return styleMap[s] || '';
                     }).filter(s => s).join(', ');
                     
                     const styleContent = styles ? `, ${styles}` : '';
@@ -852,6 +820,7 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
             },
             {
                 id: 'jar', title: 'Plugin Compiler', descKey: 't_jar', type: 'ai', locked: true, hasComingSoon: true, version: 'Java',
+                icon: '<path d="M14 2H6c-1.11 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>',
                 inputs: [], prompt: () => ''
             },
             {
@@ -861,8 +830,7 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
                     {id: 'ver', label: 'MC Version', type: 'select', opts: FULL_VERSIONS},
                     {id: 'cmd', label: 'Befehl Wunsch', type: 'text', ph: 'Ein Schwert mit Stärke 3'}
                 ],
-                // VERBESSERTER PROMPT: Erzwingt die korrekte Verwendung des /execute Befehls mit Subcommands
-                prompt: (d, l) => `Act as the MCdigger Command Expert. Generate the most robust, functional command for the request: "${d.cmd}" (Version ${d.ver}). If the request requires changing executor, location, or adding conditions (e.g., targeting multiple entities, executing conditionally, running at a block), the command MUST start with the **/execute** command, correctly chaining subcommands (like 'as', 'at', 'if', 'run') according to Java Edition syntax. The output must also utilize advanced item data features like Attribute Modifiers, Custom Model Data, Components/NBT, and correct JSON text, ensuring maximum functionality for the specified version. Always apply the hardcap (e.g., 255 for enchantments) if the requested value is excessive. Explain briefly why the generated command works and if any values were capped.`
+                prompt: (d, l) => `Generate the most robust, functional command for the request: "${d.cmd}" (Version ${d.ver}). If the request requires changing executor, location, or adding conditions, the command MUST start with the **/execute** command, correctly chaining subcommands ('as', 'at', 'if', 'run'). Utilize advanced item data features like Attribute Modifiers, Custom Model Data, Components/NBT, and correct JSON text. Always apply the hardcap (e.g., 255 for enchantments) if the requested value is excessive. Explain briefly why the generated command works and if any values were capped.`
             },
             {
                 id: 'menu', title: 'Menu Generator', descKey: 't_menu', type: 'ai', version: 'Plugins',
@@ -873,24 +841,47 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
             {
                 id: 'grad', title: 'Gradient Text', descKey: 't_grad', type: 'ai', version: '1.16+',
                 icon: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>',
-                inputs: [{id: 'ver', label: 'MC Version', type: 'select', opts: FULL_VERSIONS}, {id: 'txt', label: 'Text', type: 'text', ph: 'MCdigger'}, {id: 'cols', label: 'Colors', type: 'gradient_builder'}],
-                // VERBESSERT: Explizite Anweisung für Hex-Verwendung
+                inputs: [{id: 'ver', label: 'MC Version', type: 'select', opts: FULL_VERSIONS}, {id: 'txt', label: 'Text', type: 'text', ph: 'MCdigger'}, {id: 'cols', label: 'Colors', type: 'text', ph: '#ff0000, #0000ff'}],
                 prompt: (d, l) => `Generate a Hex Gradient text for: "${d.txt}" using these colors: ${d.cols}. Ensure smooth transitions using multiple hex color steps between the provided colors. Output both the raw color codes (&#...) and a /tellraw example.`
             }
         ];
 
+
+        // =================================================================================
+        // Hauptanwendungs-Logik (Simulation einer Single Page Application)
+        // =================================================================================
+        
         const app = {
             state: {
                 lang: 'de',
                 currentTool: null,
-                currentVersion: '1.21.8' // Auf neueste Version aus der Liste aktualisiert
+                currentVersion: '1.21.10' // Standard auf neueste Version
             },
 
             init: function() {
                 this.renderGrid();
                 this.updateTexts();
             },
+            
+            // --- UI/NAVIGATION ---
+            changeView: function(viewId, errorMsg = null) {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                
+                if (viewId === 'view-error') {
+                    document.getElementById('errorDetails').innerText = errorMsg || "Unbekannter Fehler während der Verarbeitung.";
+                }
 
+                document.getElementById(viewId).classList.add('active');
+                document.getElementById('backBtn').style.display = (viewId === 'view-home') ? 'none' : 'flex';
+                document.querySelector('main').scrollTo(0, 0); 
+            },
+
+            home: function() {
+                this.state.currentTool = null;
+                this.changeView('view-home');
+            },
+
+            // --- GRID RENDERING ---
             renderGrid: function() {
                 const grid = document.getElementById('toolsGrid');
                 grid.innerHTML = TOOLS.map(tool => `
@@ -909,8 +900,11 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
                 `).join('');
             },
 
+            // --- TOOL OPENING ---
             openTool: function(id) {
                 const tool = TOOLS.find(t => t.id === id);
+                if (!tool) return this.changeView('view-error', `Tool-ID "${id}" nicht gefunden.`);
+
                 this.state.currentTool = tool;
                 
                 const sidebar = document.getElementById('toolSidebar');
@@ -918,11 +912,8 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
                 tool.inputs.forEach(i => {
                     html += `<label>${i.label}</label>`;
                     if(i.type === 'select') {
-                        // Bei der MC Version die letzte gewählte Version vorwählen
-                        
                         html += `<select id="inp_${i.id}" class="sel" onchange="${i.id === 'ver' ? `app.state.currentVersion = this.value` : ''}">`;
                         i.opts.forEach(o => {
-                            // Wählt die letzte/Standardversion vor, wenn es das Versionsfeld ist
                             const isSelected = (i.id === 'ver' && o === this.state.currentVersion);
                             html += `<option value="${o}" ${isSelected ? 'selected' : ''}>${o}</option>`;
                         });
@@ -932,89 +923,37 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
                     } else if (i.type === 'checks') {
                         html += `<div class="chk-group">`;
                         i.opts.forEach(o => {
-                            // Verwende die korrekte Übersetzung für das Label
-                            const key = i.id === 'invul' ? 'invul' : `fmt_${o.toLowerCase().replace(/[^a-z]/g, '')}`; // Spezieller Key für Invulnerable
-                            const labelText = TRANSLATIONS[this.state.lang][key] || o;
+                            const key = o.toLowerCase().replace(/[^a-z]/g, '');
+                            const labelText = TRANSLATIONS[this.state.lang][`fmt_${key}`] || TRANSLATIONS.de[key] || o;
                             html += `<label class="chk-label"><input type="checkbox" id="chk_${i.id}_${o}"> ${labelText}</label>`;
                         });
                         html += `</div><br>`;
-                    } else if (i.type === 'gradient_builder') {
-                        // Gradient Builder UI
-                        html += `<div class="grad-list" id="grad_${i.id}"></div>
-                        <button class="btn-sec" onclick="app.addGradColor('${i.id}')">+ Farbe</button><br><br>`;
-                        // Fügt Startfarben hinzu
-                        setTimeout(() => { 
-                            // Entfernt zuerst alle, falls vorhanden
-                            document.getElementById(`grad_${i.id}`).innerHTML = '';
-                            app.addGradColor(i.id, '#dc2626'); 
-                            app.addGradColor(i.id, '#ffffff'); 
-                        }, 50);
                     } else {
                         html += `<input type="text" id="inp_${i.id}" class="inp" placeholder="${i.ph || ''}"><br>`;
                     }
                 });
                 
                 const btnText = tool.type === 'local' ? TRANSLATIONS[this.state.lang].calc_btn : TRANSLATIONS[this.state.lang].gen_btn;
-                
-                if (tool.locked) {
-                    html += `<button class="btn-full btn-disabled">COMING SOON</button>`;
-                } else {
-                    html += `<button class="btn-full" onclick="app.generate()">${btnText}</button>`;
-                }
+                html += `<button class="btn-full" onclick="app.generate()">${btnText}</button>`;
 
                 sidebar.innerHTML = html;
-
                 document.getElementById('toolIconHeader').innerHTML = `<svg viewBox="0 0 24 24">${tool.icon}</svg>`;
                 document.getElementById('toolTitleHeader').innerText = tool.title;
                 document.getElementById('toolOutput').innerText = "Warte auf Eingabe...";
-
-                document.getElementById('view-home').classList.remove('active');
-                document.getElementById('view-tool').classList.add('active');
-                document.getElementById('backBtn').style.display = 'flex';
+                this.changeView('view-tool');
             },
-
-            addGradColor: function(id, initialColor = '#ffffff') {
-                const list = document.getElementById(`grad_${id}`);
-                if(!list) return;
-                const div = document.createElement('div');
-                div.className = 'grad-row';
-                div.innerHTML = `
-                    <input type="color" class="color-preview" value="${initialColor}" oninput="this.nextElementSibling.value=this.value">
-                    <input type="text" class="inp" value="${initialColor}" oninput="this.previousElementSibling.value=this.value">
-                    <span class="btn-del" onclick="app.removeGradColor(this)">✕</span>
-                `;
-                list.appendChild(div);
-            },
-
-            removeGradColor: function(btn) {
-                // Nur entfernen, wenn mehr als zwei Farben vorhanden sind
-                if (document.querySelectorAll('.grad-row').length > 2) {
-                    btn.parentElement.remove();
-                }
-            },
-
-            home: function() {
-                document.getElementById('view-tool').classList.remove('active');
-                document.getElementById('view-home').classList.add('active');
-                document.getElementById('backBtn').style.display = 'none';
-                this.state.currentTool = null;
-            },
-
+            
+            // --- FORM GENERATION & SUBMIT ---
             generate: async function() {
-                if(!this.state.currentTool) return;
+                if(!this.state.currentTool) return this.changeView('view-error', 'Kein aktives Tool ausgewählt.');
                 const tool = this.state.currentTool;
                 const data = {};
                 
                 // Datensammlung
                 tool.inputs.forEach(i => {
                     if(i.type === 'checks') {
-                        // Sammelt die Optionen (Originalwerte)
                         const selectedOptions = i.opts.filter(o => document.getElementById(`chk_${i.id}_${o}`).checked);
                         data[i.id] = selectedOptions.join(', ');
-                    } else if (i.type === 'gradient_builder') {
-                        const colors = [];
-                        document.querySelectorAll(`#grad_${i.id} input[type=text]`).forEach(e => colors.push(e.value));
-                        data[i.id] = colors.join(', ');
                     } else {
                         const el = document.getElementById(`inp_${i.id}`);
                         if(el) data[i.id] = el.value;
@@ -1024,42 +963,91 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
                 const output = document.getElementById('toolOutput');
                 
                 if (tool.type === 'local') {
-                    const res = this.runLocal(tool.id, data);
-                    output.innerHTML = `<pre><code>${res}</code><div class="copy-btn" onclick="app.copyText(this)">COPY</div></pre>`;
+                    // Lokale Tools (schnell)
+                    const res = tool.runLocal(data);
+                    output.innerHTML = `<pre><code>${res}</code></pre>`;
                     this.addCopyButtons();
                 } else {
+                    // KI-basierte Tools (async)
                     const version = data.ver || this.state.currentVersion;
                     this.startLoadingSequence(output, version);
-                    
-                    // NEU: Setzt die Klasse für den Ladezustand (Scroll-Sperre & Zentrierung)
                     output.classList.add('loading');
                     
                     try {
                         const prompt = tool.prompt(data, this.state.lang);
-                        // Verstärkte Systemanweisung, um die Präzision zu erzwingen
-                        const system = "You are an expert Minecraft Admin/Developer who specializes in Data Packs. When generating a Data Pack structure, always provide all necessary files (pack.mcmeta and JSONs) in separate, clearly labeled code blocks. The output must be 100% functional and precise according to official documentation. 1.20.5+ uses 'Components'. 1.20.4- uses 'NBT'. Output only clean Markdown. No unnecessary talking. Use the rule: " + getLangInstruction(this.state.lang);
+                        const system = "You are an expert Minecraft Admin/Developer who specializes in all commands, NBT, and Components. Your primary goal is to generate 100% accurate and functional Minecraft code (commands, JSON, MCFunction). " + getLangInstruction(this.state.lang);
                         
                         const res = await this.callGemini(system + "\n" + prompt);
                         
-                        // Setze den Zustand zurück
                         output.classList.remove('loading');
-                        output.style.padding = "24px"; // Standard Padding für Tool Output
+                        output.style.padding = "24px";
                         
                         output.innerHTML = this.renderMarkdown(res);
                         this.addCopyButtons();
                     } catch(e) {
-                        // Setze den Zustand zurück
-                        output.classList.remove('loading');
-                        output.style.padding = "24px";
-                        
-                        output.innerHTML = `<div style="color:#ef4444; background:#330000; padding:15px; border-radius:6px; border:1px solid #7f1d1d;">
-                            <strong>ERROR:</strong> ${e.message}<br>
-                        </div>`;
+                        this.changeView('view-error', e.message);
                     }
                 }
             },
+            
+            // --- HAUPT-AI-ABFRAGE (oben im Dashboard) ---
+            askMain: async function() {
+                const inp = document.getElementById('mainAiPrompt');
+                const out = document.getElementById('mainAiRes');
+                const val = inp.value.trim();
+                if(!val) return;
 
-            // NEUE FUNKTION: Startet die gestaffelte Ladeanzeige
+                out.style.display = 'block';
+                this.startLoadingSequence(out, 'aktuell'); 
+                out.classList.add('loading');
+                
+                const sys = "You are MCdigger AI. Expert in Minecraft Java Edition. Be precise.";
+                const langRule = getLangInstruction(this.state.lang);
+                
+                try {
+                    const res = await this.callGemini(`${sys}\nRule: ${langRule}\nUser: ${val}`);
+                    
+                    out.classList.remove('loading');
+                    out.style.padding = "16px";
+                    
+                    out.innerHTML = this.renderMarkdown(res);
+                    this.addCopyButtons();
+                } catch(e) {
+                    this.changeView('view-error', e.message);
+                }
+            },
+
+            // --- KI ANRUF LOGIK ---
+            callGemini: async function(text) {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.model}:generateContent?key=${CONFIG.apiKey}`;
+                
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: text }] }] })
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error("API Error Details:", errorText);
+                        throw new Error(`API Error ${response.status}: ${response.statusText}`); 
+                    }
+
+                    const data = await response.json();
+                    if (data.candidates && data.candidates.length > 0) {
+                        return data.candidates[0].content.parts[0].text;
+                    } else if (data.promptFeedback && data.promptFeedback.blockReason) {
+                        throw new Error(`Anfrage blockiert: ${data.promptFeedback.blockReason}`);
+                    } else {
+                        throw new Error("Keine Antwort von der KI erhalten.");
+                    }
+                } catch (error) {
+                    throw error; 
+                }
+            },
+
+            // --- UI UTILITIES ---
             startLoadingSequence: function(el, version) {
                 const t = TRANSLATIONS[this.state.lang];
                 const steps = [
@@ -1069,14 +1057,7 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
                 ];
 
                 const loadingHtml = `
-                    <div style="
-                        display: flex; 
-                        flex-direction: column; 
-                        align-items: center; 
-                        justify-content: center; 
-                        height: 100%; 
-                        width: 100%;
-                    ">
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%;">
                         <div class="loading-container">
                             <p style="color:var(--accent); font-weight:bold; margin-bottom:15px;">${t.loading}</p>
                             ${steps.map(s => `
@@ -1090,22 +1071,19 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
                 `;
                 el.innerHTML = loadingHtml;
 
-                // Führt die Animation synchron mit dem KI-Aufruf aus (simulierte Wartezeit)
                 steps.forEach((step, index) => {
                     setTimeout(() => {
                         const currentEl = document.getElementById(step.id);
                         if (!currentEl) return; 
 
-                        // Deaktiviere vorherigen Schritt (ohne Haken)
                         if (index > 0) {
                             const prevEl = document.getElementById(steps[index - 1].id);
                             if(prevEl) {
                                 prevEl.classList.remove('active');
-                                prevEl.querySelector('.loading-icon').innerHTML = ''; // Icon entfernt
+                                prevEl.querySelector('.loading-icon').innerHTML = '';
                             }
                         }
                         
-                        // Aktiviere aktuellen Schritt
                         currentEl.classList.add('active');
                         currentEl.querySelector('.loading-icon').innerHTML = `<div class="loading-pulse"></div>`;
 
@@ -1113,138 +1091,20 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
                 });
             },
 
-            runLocal: function(id, d) {
-                if(id === 'head') {
-                    // Head Generator Logik
-                    const ver = d.ver || '1.21.8';
-                    // Überprüft, ob es sich um Component-Versionen (1.20.5+) handelt.
-                    const isComp = ver.startsWith('1.21') || ver.startsWith('1.20.5') || ver.startsWith('1.20.6'); 
-
-                    if (!d.name.trim() || !d.target.trim()) return "Fehler: Name und Target (z.B. @p) sind erforderlich.";
-                    const skullOwnerTag = isComp ? `[minecraft:profile={name:"${d.name}"}]` : `{SkullOwner:"${d.name}"}`;
-                    return `/give ${d.target} minecraft:player_head${skullOwnerTag} 1`;
-                }
-                if(id === 'nether') {
-                    // Nether Rechner Logik
-                    const x = parseFloat(d.x) || 0;
-                    const z = parseFloat(d.z) || 0;
-                    if (isNaN(x) || isNaN(z)) return "Fehler: X- und Z-Werte müssen Zahlen sein.";
-
-                    if (d.mode.includes('Overworld')) {
-                        return `Nether-Koordinaten:\nX=${Math.round(x/8)}\nZ=${Math.round(z/8)}`;
-                    } else {
-                        return `Overworld-Koordinaten:\nX=${x*8}\nZ=${z*8}`;
-                    }
-                }
-                if(id === 'stack') {
-                    // Stack Rechner Logik
-                    const total = parseInt(d.amt) || 0;
-                    const size = parseInt(d.size) || 64;
-                    if (isNaN(total) || isNaN(size) || size <= 0 || total < 0) return "Fehler: Ungültige Item- oder Stack-Anzahl.";
-
-                    const itemsPerShulker = size * 27;
-                    const sb = Math.floor(total / itemsPerShulker);
-                    const remItems = total % itemsPerShulker;
-                    const stacks = Math.floor(remItems / size);
-                    const items = remItems % size;
-                    
-                    return `Items: ${total}\n----------------\nShulker Boxen: ${sb}\nStacks: ${stacks}\nEinzelne Items: ${items}`;
-                }
-                return "Tool not found.";
-            },
-
-            askMain: async function() {
-                const inp = document.getElementById('mainAiPrompt');
-                const out = document.getElementById('mainAiRes');
-                const val = inp.value.trim();
-                if(!val) return;
-
-                out.style.display = 'block';
-                this.startLoadingSequence(out, 'aktuell'); // Verwende 'aktuell' als Platzhalter für die Haupt-KI
-
-                // NEU: Setzt die Klasse für den Ladezustand (Scroll-Sperre & Zentrierung)
-                out.classList.add('loading');
-                
-                const sys = "You are MCdigger AI. Expert in Minecraft Java Edition. Be precise.";
-                const langRule = getLangInstruction(this.state.lang);
-                
-                try {
-                    const res = await this.callGemini(`${sys}\nRule: ${langRule}\nUser: ${val}`);
-                    
-                    // Setze den Zustand zurück
-                    out.classList.remove('loading');
-                    out.style.padding = "16px"; // Standard Padding für AI Box Output
-                    
-                    out.innerHTML = this.renderMarkdown(res);
-                    this.addCopyButtons();
-                } catch(e) {
-                    // Setze den Zustand zurück
-                    out.classList.remove('loading');
-                    out.style.padding = "16px";
-                    
-                    out.innerHTML = `<div style="color:#ef4444; background:#330000; padding:15px; border-radius:6px; border:1px solid #7f1d1d;">
-                        <strong>ERROR:</strong> ${e.message}<br>
-                    </div>`;
-                }
-            },
-
-            showLoading: function(el) {
-                // Diese Funktion wird nur noch als Fallback verwendet.
-                el.innerHTML = `
-                    <div style="display:flex; align-items:center; padding:20px; color:var(--accent);">
-                        <div class="loading-pulse"></div>
-                        <div class="loading-pulse" style="animation-delay:0.2s"></div>
-                        <div class="loading-pulse" style="animation-delay:0.4s"></div>
-                        <span style="margin-left:10px; color:var(--text-dim);">${TRANSLATIONS[this.state.lang].loading}</span>
-                    </div>
-                `;
-            },
-
-            // --- KI CALL FUNKTION ---
-            callGemini: async function(text) {
-                // Verwende das neuere, stabilere Modell
-                const model = 'gemini-2.5-flash'; 
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${CONFIG.apiKey}`;
-                
-                console.log("Sende Anfrage an:", url); 
-
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: text }] }] })
-                    });
-
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error("API Error Details:", errorText);
-
-                        if(response.status === 404) throw new Error("Fehler 404: Modell nicht gefunden oder API im Google Cloud Projekt nicht aktiviert.");
-                        if(response.status === 403) throw new Error("Fehler 403: API Key ungültig oder keine Berechtigung.");
-                        
-                        throw new Error(`API Error ${response.status}: ${response.statusText}`); 
-                    }
-
-                    const data = await response.json();
-                    if (data.candidates && data.candidates.length > 0) {
-                        return data.candidates[0].content.parts[0].text;
-                    } else if (data.promptFeedback && data.promptFeedback.blockReason) {
-                        throw new Error(`Anfrage blockiert: ${data.promptFeedback.blockReason}`);
-                    } else {
-                        throw new Error("Keine Antwort von der KI erhalten.");
-                    }
-                } catch (error) {
-                    console.error(error);
-                    throw error; 
-                }
-            },
-
             renderMarkdown: function(text) {
-                if(typeof marked !== 'undefined') return marked.parse(text);
+                if(typeof marked !== 'undefined') {
+                    let html = marked.parse(text);
+                    // Fügt Copy-Buttons hinzu
+                    html = html.replace(/<pre><code class="(.*?)">(.*?)<\/code><\/pre>/gs, (match, p1, p2) => {
+                        return `<pre><code class="${p1}">${p2}</code><div class="copy-btn" onclick="app.copyText(this)">COPY</div></pre>`;
+                    });
+                    return html;
+                }
                 return text;
             },
 
             addCopyButtons: function() {
+                // Fügt den Event-Handler nach dem Rendern hinzu
                 setTimeout(() => {
                     document.querySelectorAll('pre').forEach(pre => {
                         if(pre.querySelector('.copy-btn')) return;
@@ -1258,9 +1118,11 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
             },
 
             copyText: function(btn) {
-                const code = btn.parentElement.querySelector('code') || btn.parentElement;
-                // Entfernt den "COPY" Text vor dem Kopieren
-                const text = code.innerText.replace(new RegExp(`\\s*${btn.innerText}$`), '');
+                const code = btn.parentElement.querySelector('code');
+                if(!code) return;
+                
+                const text = code.innerText;
+                
                 navigator.clipboard.writeText(text).then(() => {
                     const orig = btn.innerText;
                     btn.innerText = "COPIED!";
@@ -1283,18 +1145,25 @@ Gib den Inhalt JEDER Datei in einem separaten Markdown-Codeblock aus, wobei der 
                 const t = TRANSLATIONS[this.state.lang];
                 document.getElementById('lblBack').innerText = t.back;
                 document.getElementById('mainAiPrompt').placeholder = t.ph_ai;
+                
+                // Aktualisiere Tool-Beschreibungen
                 TOOLS.forEach(tool => {
                     const el = document.querySelector(`p[data-key="${tool.descKey}"]`);
                     if(el) el.innerText = t[tool.descKey];
                 });
+                
+                // Aktualisiere Button-Text
                 const btn = document.querySelector('.btn-full');
                 if(btn && !btn.classList.contains('btn-disabled')) {
                     const tool = this.state.currentTool;
-                    btn.innerText = tool && tool.type === 'local' ? t.calc_btn : t.gen_btn;
+                    if (tool) {
+                       btn.innerText = tool.type === 'local' ? t.calc_btn : t.gen_btn;
+                    }
                 }
             }
         };
 
+        // DOMContentLoaded wird verwendet, um die App zu initialisieren
         document.addEventListener('DOMContentLoaded', function() {
             app.init();
         });
